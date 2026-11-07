@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="001-create-tests-table" author="aaldeeb">
+        <createTable tableName="tests">
+            <column name="id" type="uuid">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="test_name" type="varchar(150)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="target_url" type="varchar(2048)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="http_method" type="varchar(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="duration_in_seconds" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="requests_per_sec" type="int">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>

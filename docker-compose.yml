@@ -1,0 +1,58 @@
+services:
+  # React + Vite frontend
+  # frontend:
+  #   build:
+  #     context: ./webapp
+  #     dockerfile: Dockerfile
+  #   working_dir: /app
+  #   command: npm run dev -- --host 0.0.0.0
+  #   ports:
+  #     - "5173:5173"
+  #   volumes:
+  #     - ./webapp:/app
+  #     - webapp_node_modules:/app/node_modules
+  #   environment:
+  #     VITE_API_BASE_URL: http://localhost:8080/api
+  #   depends_on:
+  #     - backend
+
+  # # Spring Boot backend
+  # backend:
+  #   build:
+  #     context: ./server
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "8080:8080"
+  #   environment:
+  #     SPRING_PROFILES_ACTIVE: local
+  #     SERVER_PORT: 8080
+  #     SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/pulseload
+  #     SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-pulseload}
+  #     SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-local_dev_password}
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+
+  # PostgreSQL database
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_DB: pulseload
+      POSTGRES_USER: ${POSTGRES_USER:-pulseload}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pulseload}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  webapp_node_modules:
+  postgres_data:
