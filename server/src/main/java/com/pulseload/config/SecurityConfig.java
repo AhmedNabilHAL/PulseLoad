@@ -60,16 +60,10 @@ public class SecurityConfig {
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                                                 .requestMatchers("/actuator/health", "/actuator/info").permitAll()
-                                                // Mutations to tests and run control require an elevated role.
-                                                .requestMatchers(HttpMethod.POST, "/tests/**")
-                                                .hasAnyRole("OPERATOR", "ADMIN")
-                                                .requestMatchers(HttpMethod.PUT, "/tests/**")
-                                                .hasAnyRole("OPERATOR", "ADMIN")
-                                                .requestMatchers(HttpMethod.DELETE, "/tests/**")
-                                                .hasAnyRole("OPERATOR", "ADMIN")
-                                                .requestMatchers(HttpMethod.POST, "/runs/**")
-                                                .hasAnyRole("OPERATOR", "ADMIN")
-                                                // Reads are available to any authenticated user.
+                                                // EXERCISE (authorization): every authenticated user can currently
+                                                // reach every endpoint, including mutations. Restrict creating,
+                                                // updating, and deleting tests and controlling runs to the
+                                                // appropriate roles.
                                                 .anyRequest().authenticated())
                                 // Persist the Basic-authenticated context into the session so the client can
                                 // authenticate later requests with the session cookie alone (HTTP Basic is

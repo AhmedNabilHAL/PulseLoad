@@ -7,7 +7,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -48,8 +47,9 @@ public class TestController {
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
+    // EXERCISE (method security): deleting a test is destructive and should require ADMIN even
+    // though an OPERATOR may perform other mutations. Add method-level authorization here.
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteTest(@PathVariable UUID id) {
         testService.deleteTest(id);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
