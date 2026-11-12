@@ -1,13 +1,10 @@
 package com.pulseload.feature.tests.service;
 
-import com.pulseload.exception.InvalidTestConfigurationException;
 import com.pulseload.exception.TestNotFoundException;
 import com.pulseload.model.Test;
 import com.pulseload.feature.tests.data.TestRepository;
 import com.pulseload.feature.tests.dto.CreateTestDto;
-import com.pulseload.feature.tests.dto.StageDto;
 import com.pulseload.feature.tests.dto.TestDto;
-import com.pulseload.feature.tests.dto.WorkloadProfileDto;
 import com.pulseload.feature.tests.mapper.TestMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -37,7 +34,9 @@ public class TestServiceImpl implements TestService {
     @Override
     @Transactional
     public TestDto createTest(CreateTestDto createTestDto) {
-        validateWorkload(createTestDto.workloadProfile());
+        // EXERCISE (business validation): a closed-model workload can never drive more concurrent
+        // virtual users than its own maxConcurrency. Reject a config whose peak stage target exceeds
+        // maxConcurrency here (and in updateTest) with a domain exception mapped to a 4xx response.
         Test test = testMapper.toEntity(createTestDto);
         return testMapper.toDto(testRepository.save(test));
     }
@@ -45,7 +44,6 @@ public class TestServiceImpl implements TestService {
     @Override
     @Transactional
     public void updateTest(UUID id, CreateTestDto createTestDto) {
-        validateWorkload(createTestDto.workloadProfile());
         Test test = findTestOrThrow(id);
         testMapper.updateEntity(createTestDto, test);
     }
@@ -57,23 +55,6 @@ public class TestServiceImpl implements TestService {
             throw new TestNotFoundException(id);
         }
         testRepository.deleteById(id);
-    }
-
-    /**
-     * Business rule that annotations can't express: the closed model can never
-     * drive more
-     * concurrent virtual users than the configured cap, so the peak target across
-     * the start value
-     * and every stage must not exceed {@code maxConcurrency}.
-     */
-    private void validateWorkload(WorkloadProfileDto profile) {
-        int peakTarget = profile.stages().stream()
-                .map(StageDto::target)
-                .reduce(profile.startTarget(), Math::max);
-        if (peakTarget > profile.maxConcurrency()) {
-            throw new InvalidTestConfigurationException(
-                    "Peak target (" + peakTarget + ") exceeds maxConcurrency (" + profile.maxConcurrency() + ")");
-        }
     }
 
     private Test findTestOrThrow(UUID id) {
