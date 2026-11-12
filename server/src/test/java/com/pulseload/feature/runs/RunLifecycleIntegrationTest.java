@@ -13,6 +13,7 @@ import com.pulseload.feature.tests.data.TestRepository;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -43,6 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
 @DirtiesContext
+@Disabled("Exercise 02-transactions: started runs stay QUEUED until @Transactional is restored on startRun; see TransactionAcceptanceTest")
 class RunLifecycleIntegrationTest {
 
     @Autowired

@@ -51,8 +51,11 @@ public class TestRunServiceImpl implements TestRunService {
     @Value("${app.runs.request-timeout:30s}")
     private final Duration requestTimeout;
 
+    // EXERCISE (transactions): starting a run publishes a RunCreatedEvent whose
+    // @TransactionalEventListener(AFTER_COMMIT) launches the engine — but that listener only fires
+    // when this method runs inside a transaction. Make this operation transactional so started runs
+    // actually begin executing instead of being stranded in QUEUED.
     @Override
-    @Transactional
     public TestRunDto startRun(UUID testId) {
         if (!runCoordinator.tryReserve()) {
             throw new RunConflictException("Too many runs in progress; try again once an active run finishes");
