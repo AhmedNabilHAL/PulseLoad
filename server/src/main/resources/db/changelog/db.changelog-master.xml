@@ -7,5 +7,6 @@
     <include file="db/changelog/changes/001-create-tests-table.xml" relativeToChangelogFile="false"/>
     <include file="db/changelog/changes/002-workload-profile.xml" relativeToChangelogFile="false"/>
     <include file="db/changelog/changes/003-test-runs.xml" relativeToChangelogFile="false"/>
+    <include file="db/changelog/changes/004-simplify-run-metrics.xml" relativeToChangelogFile="false"/>
 
 </databaseChangeLog>

@@ -1,7 +1,7 @@
 package com.pulseload.model;
 
 public enum TestRunStatus {
-    PENDING,
+    QUEUED,
     RUNNING,
     COMPLETED,
     FAILED,

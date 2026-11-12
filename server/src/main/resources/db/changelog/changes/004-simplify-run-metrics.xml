@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!--
+      Aligns the schema with the simplified, workshop-focused engine: a single end-to-end latency
+      statistic replaces the service/response split, and the open-model, saturation, and
+      resource-sampling columns are dropped along with their code.
+    -->
+    <changeSet id="004-simplify-run-metrics" author="aaldeeb">
+        <renameColumn tableName="test_runs" oldColumnName="service_time_stats" newColumnName="latency_stats" columnDataType="jsonb"/>
+
+        <dropColumn tableName="test_runs">
+            <column name="response_time_stats"/>
+            <column name="peak_cpu_load"/>
+            <column name="peak_heap_used_bytes"/>
+            <column name="saturated"/>
+            <column name="saturation_reasons"/>
+        </dropColumn>
+
+        <dropColumn tableName="test_run_metrics">
+            <column name="backlog"/>
+            <column name="cpu_load"/>
+            <column name="heap_used_bytes"/>
+        </dropColumn>
+    </changeSet>
+
+</databaseChangeLog>

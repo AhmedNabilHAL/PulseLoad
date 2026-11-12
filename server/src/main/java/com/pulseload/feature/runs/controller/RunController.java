@@ -2,6 +2,7 @@ package com.pulseload.feature.runs.controller;
 
 import com.pulseload.feature.runs.dto.TestRunDto;
 import com.pulseload.feature.runs.dto.TestRunMetricDto;
+import com.pulseload.feature.runs.dto.VirtualUserDto;
 import com.pulseload.feature.runs.service.TestRunService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -42,6 +43,11 @@ public class RunController {
     @GetMapping("/runs/{runId}/metrics")
     public ResponseEntity<List<TestRunMetricDto>> getMetrics(@PathVariable UUID runId) {
         return ResponseEntity.ok(testRunService.getMetrics(runId));
+    }
+
+    @GetMapping("/runs/{runId}/virtual-users")
+    public ResponseEntity<List<VirtualUserDto>> getVirtualUsers(@PathVariable UUID runId) {
+        return ResponseEntity.ok(testRunService.getVirtualUsers(runId));
     }
 
     @PostMapping("/runs/{runId}/stop")

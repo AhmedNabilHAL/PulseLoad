@@ -14,10 +14,14 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * Marks any run left in {@code PENDING}/{@code RUNNING} from a previous process as
- * {@code FAILED} on startup. Those rows can only exist if the JVM died mid-run (a graceful
- * shutdown drains active runs via {@code EngineShutdownHandler} before exiting) — there is no
- * live {@code EngineRun} for them anymore in this process, so they would otherwise sit
+ * Marks any run left in {@code QUEUED}/{@code RUNNING} from a previous process
+ * as
+ * {@code FAILED} on startup. Those rows can only exist if the JVM died mid-run
+ * (a graceful
+ * shutdown drains active runs via {@code EngineShutdownHandler} before exiting)
+ * — there is no
+ * live {@code EngineRun} for them anymore in this process, so they would
+ * otherwise sit
  * "running" forever.
  */
 @Component
@@ -30,7 +34,7 @@ class OrphanRunRecovery {
     @EventListener(ApplicationReadyEvent.class)
     @Transactional
     void recoverOrphanedRuns() {
-        List<TestRun> orphans = testRunRepository.findByStatusIn(List.of(TestRunStatus.PENDING, TestRunStatus.RUNNING));
+        List<TestRun> orphans = testRunRepository.findByStatusIn(List.of(TestRunStatus.QUEUED, TestRunStatus.RUNNING));
         for (TestRun orphan : orphans) {
             orphan.setStatus(TestRunStatus.FAILED);
             orphan.setFinishedAt(Instant.now());

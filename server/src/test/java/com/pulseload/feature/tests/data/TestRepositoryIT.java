@@ -26,14 +26,13 @@ class TestRepositoryIT {
     @Test
     void persistsAndReloadsWorkloadProfileAsJsonb() {
         WorkloadProfile workloadProfile = new WorkloadProfile();
-        workloadProfile.setLoadModel(LoadModel.OPEN);
+        workloadProfile.setLoadModel(LoadModel.CLOSED);
         workloadProfile.setStartTarget(10);
         workloadProfile.setMaxConcurrency(200);
         workloadProfile.setStages(List.of(
                 new Stage(60, 100),
                 new Stage(60, 500),
-                new Stage(60, 1000)
-        ));
+                new Stage(60, 1000)));
 
         com.pulseload.model.Test test = new com.pulseload.model.Test();
         test.setTestName("Checkout API ramp");
@@ -45,13 +44,12 @@ class TestRepositoryIT {
 
         com.pulseload.model.Test reloaded = testRepository.findById(saved.getId()).orElseThrow();
 
-        assertThat(reloaded.getWorkloadProfile().getLoadModel()).isEqualTo(LoadModel.OPEN);
+        assertThat(reloaded.getWorkloadProfile().getLoadModel()).isEqualTo(LoadModel.CLOSED);
         assertThat(reloaded.getWorkloadProfile().getStartTarget()).isEqualTo(10);
         assertThat(reloaded.getWorkloadProfile().getMaxConcurrency()).isEqualTo(200);
         assertThat(reloaded.getWorkloadProfile().getStages()).containsExactly(
                 new Stage(60, 100),
                 new Stage(60, 500),
-                new Stage(60, 1000)
-        );
+                new Stage(60, 1000));
     }
 }

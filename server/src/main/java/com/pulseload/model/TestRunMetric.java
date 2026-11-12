@@ -20,10 +20,11 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * One row per second of a run's execution, mirroring {@code engine.api.MetricsSnapshot} plus the
- * generator's own resource usage at that instant. This is what the time-series/metrics endpoint
- * returns so a user can watch a run's actual-vs-requested RPS and latency evolve, and later
- * correlate a dip in actual RPS with a CPU spike (US 2.4).
+ * One row per second of a run's execution, mirroring
+ * {@code engine.api.MetricsSnapshot}. This is
+ * what the time-series/metrics endpoint returns so a user can watch a run's
+ * actual-vs-requested
+ * throughput and active virtual users evolve over its lifetime.
  */
 @Entity
 @Table(name = "test_run_metrics")
@@ -59,16 +60,7 @@ public class TestRunMetric {
     @Column(name = "active_requests", nullable = false)
     private Integer activeRequests;
 
-    @Column(name = "backlog", nullable = false)
-    private Long backlog;
-
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "outcome_counts", nullable = false, columnDefinition = "jsonb")
     private Map<ExecutionOutcome, Long> outcomeCounts;
-
-    @Column(name = "cpu_load")
-    private Double cpuLoad;
-
-    @Column(name = "heap_used_bytes")
-    private Long heapUsedBytes;
 }

@@ -4,12 +4,14 @@ import com.pulseload.engine.concurrent.TaskDispatcher;
 import com.pulseload.engine.metrics.MetricsRecorder;
 import com.pulseload.engine.schedule.WorkloadSchedule;
 import com.pulseload.engine.time.NanoClock;
+import com.pulseload.engine.vu.VirtualUserRegistry;
 import com.pulseload.model.Stage;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -19,9 +21,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ClosedModelStrategyTest {
 
     /**
-     * Every strategy created by a test is stopped here so its VU loops exit their {@code while}
-     * condition instead of spinning forever once the test's executor gate is released — without
-     * this, leaked tight-looping virtual threads from one test starve the next test's VUs of
+     * Every strategy created by a test is stopped here so its VU loops exit their
+     * {@code while}
+     * condition instead of spinning forever once the test's executor gate is
+     * released — without
+     * this, leaked tight-looping virtual threads from one test starve the next
+     * test's VUs of
      * carrier threads within the assertion timeout.
      */
     private final List<ClosedModelStrategy> createdStrategies = new ArrayList<>();
@@ -31,14 +36,18 @@ class ClosedModelStrategyTest {
     @AfterEach
     void stopAllStrategies() {
         createdStrategies.forEach(ClosedModelStrategy::stop);
-        // Also release every executor's gate so any VU parked inside execute() can observe
-        // stop() and exit its loop, instead of blocking forever and leaking into later tests.
+        // Also release every executor's gate so any VU parked inside execute() can
+        // observe
+        // stop() and exit its loop, instead of blocking forever and leaking into later
+        // tests.
         createdExecutors.forEach(BlockingExecutor::release);
     }
 
-    private ClosedModelStrategy newStrategy(WorkloadSchedule schedule, BlockingExecutor executor, MetricsRecorder metricsRecorder) {
+    private ClosedModelStrategy newStrategy(WorkloadSchedule schedule, BlockingExecutor executor,
+            MetricsRecorder metricsRecorder) {
         ClosedModelStrategy strategy = new ClosedModelStrategy(
-                schedule, executor, metricsRecorder, TaskDispatcher.VIRTUAL_THREADS, NanoClock.SYSTEM);
+                UUID.randomUUID(), schedule, executor, metricsRecorder, TaskDispatcher.VIRTUAL_THREADS,
+                new VirtualUserRegistry(), NanoClock.SYSTEM);
         createdStrategies.add(strategy);
         return strategy;
     }
@@ -51,7 +60,8 @@ class ClosedModelStrategyTest {
     }
 
     /**
-     * A VU "request" that blocks until released, so the test can observe exactly how many VU
+     * A VU "request" that blocks until released, so the test can observe exactly
+     * how many VU
      * loops are mid-iteration at a given moment instead of racing real completions.
      */
     private static final class BlockingExecutor implements com.pulseload.engine.executor.ProtocolExecutor {

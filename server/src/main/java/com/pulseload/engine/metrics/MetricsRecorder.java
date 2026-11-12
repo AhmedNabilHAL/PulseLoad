@@ -11,21 +11,18 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
 
 /**
- * Collects per-request outcomes for a single run. Two histograms are kept deliberately separate:
- * {@code serviceTime} is actual send-to-response latency, while {@code responseTime} is measured
- * from the request's <em>intended</em> send time (per the workload schedule) to response. Under
- * the open model, serviceTime alone would hide coordinated omission — a generator that falls
- * behind schedule still reports fast service times for the requests it does get out, even though
- * users experienced much longer waits for the ones it was late to send.
+ * Collects per-request outcomes and end-to-end latency for a single run.
  *
- * <p>Thread-safe: {@code recordCompletion} is called concurrently from many virtual threads, while
- * {@code intervalServiceTimeHistogram}/{@code intervalResponseTimeHistogram} are called periodically
- * from a single reporting thread. HdrHistogram's {@link Recorder} is built for exactly this pattern.
+ * <p>
+ * Thread-safe: {@code recordCompletion} is called concurrently from many
+ * virtual threads, while
+ * {@code intervalLatencyHistogram} is called periodically from a single
+ * reporting thread.
+ * HdrHistogram's {@link Recorder} is built for exactly this pattern.
  */
 public final class MetricsRecorder {
 
-    private final Recorder serviceTimeRecorder = new Recorder(3);
-    private final Recorder responseTimeRecorder = new Recorder(3);
+    private final Recorder latencyRecorder = new Recorder(3);
     private final Map<ExecutionOutcome, LongAdder> outcomeCounts = new EnumMap<>(ExecutionOutcome.class);
     private final LongAdder droppedCount = new LongAdder();
     private final LongAdder dispatchedCount = new LongAdder();
@@ -42,16 +39,11 @@ public final class MetricsRecorder {
         activeRequests.incrementAndGet();
     }
 
-    /**
-     * @param serviceTimeNanos  actual send-to-response latency
-     * @param responseTimeNanos intended-send-to-response latency; equal to serviceTimeNanos under
-     *                          the closed model, where coordinated omission is inherent by design
-     */
-    public void recordCompletion(ExecutionOutcome outcome, long serviceTimeNanos, long responseTimeNanos) {
+    /** @param latencyNanos end-to-end send-to-response latency for this request */
+    public void recordCompletion(ExecutionOutcome outcome, long latencyNanos) {
         activeRequests.decrementAndGet();
         outcomeCounts.get(outcome).increment();
-        serviceTimeRecorder.recordValue(serviceTimeNanos);
-        responseTimeRecorder.recordValue(responseTimeNanos);
+        latencyRecorder.recordValue(latencyNanos);
     }
 
     public void recordDropped() {
@@ -80,14 +72,12 @@ public final class MetricsRecorder {
         return snapshot;
     }
 
-    /** Snapshot-and-reset of service time recorded since the last call; intended for periodic reporting. */
-    public Histogram intervalServiceTimeHistogram() {
-        return serviceTimeRecorder.getIntervalHistogram();
-    }
-
-    /** Snapshot-and-reset of response time recorded since the last call; intended for periodic reporting. */
-    public Histogram intervalResponseTimeHistogram() {
-        return responseTimeRecorder.getIntervalHistogram();
+    /**
+     * Snapshot-and-reset of latency recorded since the last call; intended for
+     * periodic reporting.
+     */
+    public Histogram intervalLatencyHistogram() {
+        return latencyRecorder.getIntervalHistogram();
     }
 
     public static LatencyStats statsOf(Histogram histogram) {
@@ -101,7 +91,6 @@ public final class MetricsRecorder {
                 histogram.getValueAtPercentile(50),
                 histogram.getValueAtPercentile(90),
                 histogram.getValueAtPercentile(95),
-                histogram.getValueAtPercentile(99)
-        );
+                histogram.getValueAtPercentile(99));
     }
 }

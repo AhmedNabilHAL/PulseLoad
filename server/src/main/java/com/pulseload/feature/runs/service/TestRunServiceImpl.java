@@ -11,6 +11,7 @@ import com.pulseload.feature.runs.data.TestRunMetricRepository;
 import com.pulseload.feature.runs.data.TestRunRepository;
 import com.pulseload.feature.runs.dto.TestRunDto;
 import com.pulseload.feature.runs.dto.TestRunMetricDto;
+import com.pulseload.feature.runs.dto.VirtualUserDto;
 import com.pulseload.feature.runs.execution.LoadGenerator;
 import com.pulseload.feature.runs.mapper.TestRunMapper;
 import com.pulseload.feature.tests.data.TestRepository;
@@ -63,7 +64,7 @@ public class TestRunServiceImpl implements TestRunService {
 
             TestRun run = new TestRun();
             run.setTest(test);
-            run.setStatus(TestRunStatus.PENDING);
+            run.setStatus(TestRunStatus.QUEUED);
             run.setConfigSnapshot(test.getWorkloadProfile());
             run.setCreatedAt(Instant.now());
 
@@ -99,6 +100,19 @@ public class TestRunServiceImpl implements TestRunService {
     }
 
     @Override
+    public List<VirtualUserDto> getVirtualUsers(UUID runId) {
+        findRunOrThrow(runId);
+        return loadGenerator.virtualUsers(runId).stream()
+                .map(vu -> new VirtualUserDto(
+                        vu.id(),
+                        vu.activity().name(),
+                        vu.requestCount(),
+                        vu.lastOutcome() != null ? vu.lastOutcome().name() : null,
+                        vu.lastActivityAt()))
+                .toList();
+    }
+
+    @Override
     public void stopRun(UUID runId) {
         findRunOrThrow(runId);
         loadGenerator.stop(runId);
@@ -110,8 +124,10 @@ public class TestRunServiceImpl implements TestRunService {
     }
 
     /**
-     * Starts the engine only once the transaction that created the {@code TestRun} row has
-     * actually committed — if the transaction rolled back, this listener never fires, so the
+     * Starts the engine only once the transaction that created the {@code TestRun}
+     * row has
+     * actually committed — if the transaction rolled back, this listener never
+     * fires, so the
      * engine can never run against a row that doesn't durably exist.
      */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -128,11 +144,11 @@ public class TestRunServiceImpl implements TestRunService {
                 run.getConfigSnapshot().getStartTarget(),
                 run.getConfigSnapshot().getMaxConcurrency(),
                 run.getConfigSnapshot().getStages(),
-                requestTimeout
-        );
+                requestTimeout);
 
         ExecutorService persistenceExecutor = Executors.newSingleThreadExecutor();
-        EngineRunListener listener = new EngineRunListener(run.getId(), runPersistence, persistenceExecutor, runCoordinator);
+        EngineRunListener listener = new EngineRunListener(run.getId(), runPersistence, persistenceExecutor,
+                runCoordinator);
         loadGenerator.start(spec, listener);
     }
 }

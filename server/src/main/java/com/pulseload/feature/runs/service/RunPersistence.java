@@ -17,11 +17,16 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * Writes run state to the database from the engine's own reporting thread. Every method here is
- * {@code REQUIRES_NEW} so a slow write never shares (or gets blocked by) the transaction that
- * created the run, and so a failure writing one snapshot can't roll back a previous one. Called
- * from {@link EngineRunListener}, which itself runs on a dedicated single-thread executor rather
- * than the engine's pacing or ticker thread, so a slow or blocked write never perturbs pacing
+ * Writes run state to the database from the engine's own reporting thread.
+ * Every method here is
+ * {@code REQUIRES_NEW} so a slow write never shares (or gets blocked by) the
+ * transaction that
+ * created the run, and so a failure writing one snapshot can't roll back a
+ * previous one. Called
+ * from {@link EngineRunListener}, which itself runs on a dedicated
+ * single-thread executor rather
+ * than the engine's pacing or ticker thread, so a slow or blocked write never
+ * perturbs pacing
  * accuracy.
  */
 @Component
@@ -54,10 +59,7 @@ class RunPersistence {
         metric.setCompletedCount(snapshot.completedCount());
         metric.setDroppedCount(snapshot.droppedCount());
         metric.setActiveRequests(snapshot.activeRequests());
-        metric.setBacklog(snapshot.backlog());
         metric.setOutcomeCounts(snapshot.outcomeCounts());
-        metric.setCpuLoad(snapshot.cpuLoad() >= 0 ? snapshot.cpuLoad() : null);
-        metric.setHeapUsedBytes(snapshot.heapUsedBytes());
         testRunMetricRepository.save(metric);
     }
 
@@ -84,14 +86,9 @@ class RunPersistence {
         summary.setTotalCompleted(report.totalCompleted());
         summary.setTotalDropped(report.totalDropped());
         summary.setOutcomeCounts(report.outcomeCounts());
-        summary.setServiceTimeStats(report.serviceTime());
-        summary.setResponseTimeStats(report.responseTime());
+        summary.setLatencyStats(report.latency());
         summary.setRequestedRps(report.requestedRps());
         summary.setActualRps(report.actualRps());
-        summary.setPeakCpuLoad(report.peakCpuLoad() >= 0 ? report.peakCpuLoad() : null);
-        summary.setPeakHeapUsedBytes(report.peakHeapUsedBytes());
-        summary.setSaturated(report.saturated());
-        summary.setSaturationReasons(report.saturationReasons());
         return summary;
     }
 }

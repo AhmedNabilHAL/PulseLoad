@@ -14,26 +14,31 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
 
 /**
- * Runs load tests in the same JVM as the control plane. This is the engine-side half of the
- * seam Sprint 4 replaces with a remote, gRPC-driven worker: {@code service.runs.execution}'s
- * {@code LoadGenerator} port is implemented by an in-process adapter today and a gRPC adapter
- * later, but either way it delegates the actual pacing/execution work to this class (today) or
- * to a remote worker process (later) without the control plane's own code changing.
+ * Runs load tests in the same JVM as the control plane. This is the engine-side
+ * half of the
+ * seam Sprint 4 replaces with a remote, gRPC-driven worker:
+ * {@code service.runs.execution}'s
+ * {@code LoadGenerator} port is implemented by an in-process adapter today and
+ * a gRPC adapter
+ * later, but either way it delegates the actual pacing/execution work to this
+ * class (today) or
+ * to a remote worker process (later) without the control plane's own code
+ * changing.
  *
- * <p>Tracks one {@link EngineRun} per active {@code runId} — the engine-side analogue of
- * {@code RunCoordinator} in the control plane, which tracks active runs for the purpose of
+ * <p>
+ * Tracks one {@link EngineRun} per active {@code runId} — the engine-side
+ * analogue of
+ * {@code RunCoordinator} in the control plane, which tracks active runs for the
+ * purpose of
  * enforcing the concurrent-run limit and routing stop requests.
  *
- * <p>Spring autowires every {@link LoadStrategyFactory} bean into {@code strategyFactories}; this
- * is where the OPEN-vs-CLOSED choice that used to be an if/else in {@code EngineRun} now lives.
- * {@code EngineRun} is a prototype-scoped bean, so a fresh instance (and a fresh proxy) is
- * requested per run via {@code engineRuns.getObject(...)}, passing every constructor argument
- * explicitly — Spring does not mix explicitly-passed arguments with autowiring in a single
- * constructor call, so the resolved {@link LoadStrategyFactory} must be supplied here rather than
- * left for {@code EngineRun} to autowire itself.
+ * <p>
+ * Each run is handed to {@link AsyncRunLauncher} so it executes on a background
+ * thread and
+ * {@link #start} returns immediately, rather than blocking the caller for the
+ * run's duration.
  */
 @Component
 @RequiredArgsConstructor
@@ -41,21 +46,17 @@ public final class InProcessEngine {
 
     private final List<LoadStrategyFactory> strategyFactories;
     private final ObjectProvider<EngineRun> engineRuns;
+    private final AsyncRunLauncher asyncRunLauncher;
     private final Map<UUID, EngineRun> activeRuns = new ConcurrentHashMap<>();
 
     public void start(RunSpec spec, RunListener listener) {
-        ProtocolExecutor executor = new HttpExecutor(URI.create(spec.targetUrl()), spec.httpMethod(), spec.requestTimeout());
+        ProtocolExecutor executor = new HttpExecutor(URI.create(spec.targetUrl()), spec.httpMethod(),
+                spec.requestTimeout());
         LoadStrategyFactory strategyFactory = strategyFactoryFor(spec.loadModel());
         EngineRun run = engineRuns.getObject(spec, executor, listener, strategyFactory);
         activeRuns.put(spec.runId(), run);
 
-        Executors.defaultThreadFactory().newThread(() -> {
-            try {
-                run.runToCompletion();
-            } finally {
-                activeRuns.remove(spec.runId());
-            }
-        }).start();
+        asyncRunLauncher.launch(run, () -> activeRuns.remove(spec.runId()));
     }
 
     public void stop(UUID runId) {
@@ -65,7 +66,10 @@ public final class InProcessEngine {
         }
     }
 
-    /** Requests every active run to stop and blocks until each has actually finished. Intended for shutdown. */
+    /**
+     * Requests every active run to stop and blocks until each has actually
+     * finished. Intended for shutdown.
+     */
     public void stopAll() {
         activeRuns.values().forEach(EngineRun::stop);
         activeRuns.values().forEach(run -> {
