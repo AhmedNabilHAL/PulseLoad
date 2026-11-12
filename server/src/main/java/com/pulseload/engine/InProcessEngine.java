@@ -33,12 +33,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * {@code RunCoordinator} in the control plane, which tracks active runs for the
  * purpose of
  * enforcing the concurrent-run limit and routing stop requests.
- *
- * <p>
- * Each run is handed to {@link AsyncRunLauncher} so it executes on a background
- * thread and
- * {@link #start} returns immediately, rather than blocking the caller for the
- * run's duration.
  */
 @Component
 @RequiredArgsConstructor
@@ -46,7 +40,6 @@ public final class InProcessEngine {
 
     private final List<LoadStrategyFactory> strategyFactories;
     private final ObjectProvider<EngineRun> engineRuns;
-    private final AsyncRunLauncher asyncRunLauncher;
     private final Map<UUID, EngineRun> activeRuns = new ConcurrentHashMap<>();
 
     public void start(RunSpec spec, RunListener listener) {
@@ -56,7 +49,13 @@ public final class InProcessEngine {
         EngineRun run = engineRuns.getObject(spec, executor, listener, strategyFactory);
         activeRuns.put(spec.runId(), run);
 
-        asyncRunLauncher.launch(run, () -> activeRuns.remove(spec.runId()));
+        // EXERCISE (async): the run executes synchronously here, so start() blocks the caller for
+        // the entire run instead of returning promptly. Move the work onto a background executor.
+        try {
+            run.runToCompletion();
+        } finally {
+            activeRuns.remove(spec.runId());
+        }
     }
 
     public void stop(UUID runId) {

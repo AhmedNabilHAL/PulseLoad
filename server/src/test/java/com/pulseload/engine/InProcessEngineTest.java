@@ -59,7 +59,6 @@ class InProcessEngineTest {
             RunMdcAspect.class,
             ClosedLoadStrategyFactory.class,
             VirtualUserRegistry.class,
-            AsyncRunLauncher.class,
             EngineRun.class,
             InProcessEngine.class
     })
