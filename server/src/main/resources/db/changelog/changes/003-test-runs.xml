@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="003-create-test-runs-table" author="aaldeeb">
+        <createTable tableName="test_runs">
+            <column name="id" type="uuid">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="test_id" type="uuid">
+                <constraints nullable="false" foreignKeyName="fk_test_runs_test" references="tests(id)"/>
+            </column>
+            <column name="status" type="varchar(10)">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Snapshot of the test's workload profile at the time this run was created. -->
+            <column name="config_load_model" type="varchar(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="config_start_target" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="config_max_concurrency" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="config_stages" type="jsonb">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="created_at" type="timestamptz">
+                <constraints nullable="false"/>
+            </column>
+            <column name="started_at" type="timestamptz"/>
+            <column name="finished_at" type="timestamptz"/>
+
+            <!-- Final run summary, populated once the run completes, fails, or is cancelled. -->
+            <column name="total_dispatched" type="bigint"/>
+            <column name="total_completed" type="bigint"/>
+            <column name="total_dropped" type="bigint"/>
+            <column name="outcome_counts" type="jsonb"/>
+            <column name="service_time_stats" type="jsonb"/>
+            <column name="response_time_stats" type="jsonb"/>
+            <column name="requested_rps" type="double precision"/>
+            <column name="actual_rps" type="double precision"/>
+            <column name="peak_cpu_load" type="double precision"/>
+            <column name="peak_heap_used_bytes" type="bigint"/>
+            <column name="saturated" type="boolean"/>
+            <column name="saturation_reasons" type="jsonb"/>
+        </createTable>
+
+        <createIndex indexName="idx_test_runs_test_id" tableName="test_runs">
+            <column name="test_id"/>
+        </createIndex>
+        <createIndex indexName="idx_test_runs_status" tableName="test_runs">
+            <column name="status"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="003-create-test-run-metrics-table" author="aaldeeb">
+        <createTable tableName="test_run_metrics">
+            <column name="id" type="uuid">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="test_run_id" type="uuid">
+                <constraints nullable="false" foreignKeyName="fk_test_run_metrics_test_run" references="test_runs(id)"/>
+            </column>
+            <column name="elapsed_seconds" type="double precision">
+                <constraints nullable="false"/>
+            </column>
+            <column name="requested_target" type="double precision">
+                <constraints nullable="false"/>
+            </column>
+            <column name="completed_rps" type="double precision">
+                <constraints nullable="false"/>
+            </column>
+            <column name="completed_count" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="dropped_count" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="active_requests" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="backlog" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="outcome_counts" type="jsonb">
+                <constraints nullable="false"/>
+            </column>
+            <column name="cpu_load" type="double precision"/>
+            <column name="heap_used_bytes" type="bigint"/>
+        </createTable>
+
+        <createIndex indexName="idx_test_run_metrics_test_run_id" tableName="test_run_metrics">
+            <column name="test_run_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

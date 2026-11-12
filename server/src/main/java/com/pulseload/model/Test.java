@@ -29,9 +29,6 @@ public class Test {
     @Column(length = 10, nullable = false)
     private HttpMethod httpMethod;
 
-    @Column(nullable = false)
-    private Integer durationInSeconds;
-
-    @Column(nullable = false)
-    private Integer requestsPerSec;
+    @Embedded
+    private WorkloadProfile workloadProfile;
 }

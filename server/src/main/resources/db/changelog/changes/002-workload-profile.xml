@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="002-add-workload-profile-columns" author="aaldeeb">
+        <addColumn tableName="tests">
+            <column name="load_model" type="varchar(10)"/>
+            <column name="start_target" type="int"/>
+            <column name="max_concurrency" type="int"/>
+            <column name="stages" type="jsonb"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="002-migrate-existing-tests-to-workload-profile" author="aaldeeb">
+        <sql>
+            UPDATE tests
+            SET load_model = 'OPEN',
+                start_target = requests_per_sec,
+                max_concurrency = requests_per_sec,
+                stages = jsonb_build_array(
+                        jsonb_build_object(
+                                'durationSeconds', duration_in_seconds,
+                                'target', requests_per_sec
+                        )
+                )
+        </sql>
+    </changeSet>
+
+    <changeSet id="002-enforce-workload-profile-not-null" author="aaldeeb">
+        <addNotNullConstraint tableName="tests" columnName="load_model" columnDataType="varchar(10)"/>
+        <addNotNullConstraint tableName="tests" columnName="start_target" columnDataType="int"/>
+        <addNotNullConstraint tableName="tests" columnName="max_concurrency" columnDataType="int"/>
+        <addNotNullConstraint tableName="tests" columnName="stages" columnDataType="jsonb"/>
+    </changeSet>
+
+    <changeSet id="002-drop-legacy-rate-columns" author="aaldeeb">
+        <dropColumn tableName="tests" columnName="duration_in_seconds"/>
+        <dropColumn tableName="tests" columnName="requests_per_sec"/>
+    </changeSet>
+
+</databaseChangeLog>
