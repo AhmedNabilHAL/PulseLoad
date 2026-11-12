@@ -98,6 +98,10 @@ class EngineRun implements RunIdentifiable {
             snapshotTicker.scheduleAtFixedRate(self::emitSnapshot, SNAPSHOT_INTERVAL_MILLIS, SNAPSHOT_INTERVAL_MILLIS,
                     TimeUnit.MILLISECONDS);
             strategy.run();
+            // Stop periodic snapshots and wait for any in-flight tick to finish before the final
+            // aggregation, so finish() reads the accumulated histogram without a concurrent
+            // accumulate() from the ticker thread.
+            stopSnapshotTicker();
             emitSnapshot(); // plain self-call, on purpose: already inside this method's advised
                             // scope on this same thread, so runId is already set correctly
             double elapsed = elapsedSeconds();
@@ -130,6 +134,15 @@ class EngineRun implements RunIdentifiable {
     public void stop() {
         stopRequested = true;
         strategy.stop();
+    }
+
+    private void stopSnapshotTicker() {
+        snapshotTicker.shutdown();
+        try {
+            snapshotTicker.awaitTermination(2, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     /** Blocks the calling thread until {@link #runToCompletion} has returned. */
