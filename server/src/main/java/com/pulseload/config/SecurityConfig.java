@@ -15,7 +15,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -48,8 +50,13 @@ public class SecurityConfig {
                 http
                                 .cors(Customizer.withDefaults())
                                 // Token stored in a non-HttpOnly cookie (XSRF-TOKEN) so the SPA can read it and
-                                // echo it back in the X-XSRF-TOKEN header on mutating requests.
-                                .csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
+                                // echo it back in the X-XSRF-TOKEN header on mutating requests. The plain
+                                // request
+                                // handler validates the raw cookie token (the default XOR handler expects an
+                                // encoded token the SPA never receives).
+                                .csrf(csrf -> csrf
+                                                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                                                .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                                                 .requestMatchers("/actuator/health", "/actuator/info").permitAll()
@@ -64,7 +71,11 @@ public class SecurityConfig {
                                                 .hasAnyRole("OPERATOR", "ADMIN")
                                                 // Reads are available to any authenticated user.
                                                 .anyRequest().authenticated())
-                                .httpBasic(Customizer.withDefaults());
+                                // Persist the Basic-authenticated context into the session so the client can
+                                // authenticate later requests with the session cookie alone (HTTP Basic is
+                                // otherwise per-request and would not establish a cookie-based session).
+                                .httpBasic(basic -> basic
+                                                .securityContextRepository(new HttpSessionSecurityContextRepository()));
 
                 return http.build();
         }

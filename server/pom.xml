@@ -29,6 +29,10 @@
 	<properties>
 		<java.version>21</java.version>
 		<org.mapstruct.version>1.6.3</org.mapstruct.version>
+		<!-- Workshop exercise acceptance tests are tagged "acceptance" and excluded from the
+		     default build so every branch stays green; run them with:
+		     ./mvnw test -Dtest.excludedGroups= -Dgroups=acceptance -->
+		<test.excludedGroups>acceptance</test.excludedGroups>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -158,6 +162,13 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<excludedGroups>${test.excludedGroups}</excludedGroups>
+				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>

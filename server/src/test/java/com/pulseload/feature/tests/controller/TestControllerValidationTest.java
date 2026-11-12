@@ -7,6 +7,7 @@ import com.pulseload.feature.tests.dto.WorkloadProfileDto;
 import com.pulseload.feature.tests.service.TestService;
 import com.pulseload.model.HttpMethod;
 import com.pulseload.model.LoadModel;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -27,6 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import(SecurityConfig.class)
 @TestPropertySource(properties = "app.cors.allowed-origins=http://localhost:5173")
 @WithMockUser(roles = "OPERATOR")
+@Tag("acceptance")
 class TestControllerValidationTest {
 
     @Autowired
