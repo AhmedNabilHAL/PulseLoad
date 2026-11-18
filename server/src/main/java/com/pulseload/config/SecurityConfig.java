@@ -55,7 +55,7 @@ public class SecurityConfig {
                                 // handler validates the raw cookie token (the default XOR handler expects an
                                 // encoded token the SPA never receives).
                                 .csrf(csrf -> csrf
-                                                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                                                .csrfTokenRepository(cookieCsrfTokenRepository())
                                                 .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
@@ -78,6 +78,21 @@ public class SecurityConfig {
                                                 .securityContextRepository(new HttpSessionSecurityContextRepository()));
 
                 return http.build();
+        }
+
+        /**
+         * Cookie path defaults to the servlet context path ({@code /api}), which
+         * would hide the
+         * cookie from {@code document.cookie} on the SPA's pages (served from
+         * {@code /}, a
+         * different path). Pinning it to {@code /} keeps the token readable by the
+         * frontend
+         * regardless of the API's context path.
+         */
+        private CookieCsrfTokenRepository cookieCsrfTokenRepository() {
+                CookieCsrfTokenRepository repository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+                repository.setCookiePath("/");
+                return repository;
         }
 
         @Bean
